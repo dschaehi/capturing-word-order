@@ -1,4 +1,5 @@
-* Capturing Word Order in Averaging Based Sentence Embeddings
+
+Capturing Word Order in Averaging Based Sentence Embeddings
 ** Installation
 *** Prepare Wikipedia Corpus
 **** Update and initialize submodule [[https://github.com/attardi/wikiextractor][Wikiextractor]] 
@@ -10,7 +11,10 @@ You can downloda an [[https://archive.org/download/enwiki-20190201/enwiki-201902
 **** Create a folder for interim data
 ~mkdir -p data/interim~
 **** Extract text from the wikipedia dump
-~cd src/data/wikiextractor && python WikiExtractor.py --process [num_processes] --json -co ../../../data/interim/wiki ../../../data/raw/[wiki_dump_file_name]~ 
-Replace ~num_processes~ witht the number of CPU cores and ~wiki_dump_file_name~ with the name of the wikipedia dump usually ending with ~.xml.bz2~
+#+begin_src sh
+cd src/data/wikiextractor
+python WikiExtractor.py --process [num_processes] --json -co ../../../data/interim/wiki ../../../data/raw/[wiki_dump_file_name]
+#+end_src
+(Replace ~num_processes~ witht the number of CPU cores and ~wiki_dump_file_name~ with the name of the wikipedia dump usually ending with ~.xml.bz2~)
 
 
