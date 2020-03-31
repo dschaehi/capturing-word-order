@@ -1,25 +1,33 @@
 
 Capturing Word Order in Averaging Based Sentence Embeddings
 ** Installation
+*** Requirements
+- nltk
+- tqdm
 *** Prepare Wikipedia Corpus
 #+begin_src sh
-  # Update and initialize submodule
-  # [[https://github.com/attardi/wikiextractor][Wikiextractor]]
+  # Update and initialize submodules
   git submodule update
   git submodule init
   # Create a folder for raw data
   mkdir -p data/raw
-  # Download Wikipedia dump put it in folder data/raw. You can downloda
-  # an archived dump from
-  # https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2
-  # or a recent dump from https://dumps.wikimedia.org/enwiki.
+  # Download an archived Wikipedia dump (alternatively, you can download
+  # a recent dump from https://dumps.wikimedia.org/enwiki.) and save it
+  # as data/raw/wiki.bz2.
   wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 data/raw/wiki.bz2
   # Create a folder for interim data
   mkdir -p data/interim
-  # Extract text from the wikipedia dump
+  # Extract text from the wikipedia dump as data/interim/wiki.json.
+  # Replace --process 32 with --process n where n is the number of
+  # available CPU cores.
   cd src/data/wikiextractor
   python WikiExtractor.py --process 32 --json -co ../../../data/interim/wiki ../../../data/raw/wiki.bz2
-  # Replace --process 32  with --process n where n is the number of available CPU cores.
+#+end_src
+*** Generate tokenized sentences
+#+begin_src sh
+python -c "import nltk; nltk.download('punkt')"
+cd src/data/
+python tokenize_wiki.py 
 #+end_src
 
 
