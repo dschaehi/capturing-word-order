@@ -3,20 +3,23 @@ Capturing Word Order in Averaging Based Sentence Embeddings
 ** Installation
 *** Prepare Wikipedia Corpus
 #+begin_src sh
-  # Update and initialize submodule [[https://github.com/attardi/wikiextractor][Wikiextractor]]
+  # Update and initialize submodule
+  # [[https://github.com/attardi/wikiextractor][Wikiextractor]]
   git submodule update
   git submodule init
   # Create a folder for raw data
   mkdir -p data/raw
-  # Download Wikipedia dump put it in folder data/raw. 
-  # You can downloda an archived dump from https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 or a recent dump from https://dumps.wikimedia.org/enwiki.
-  wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 data/raw
+  # Download Wikipedia dump put it in folder data/raw. You can downloda
+  # an archived dump from
+  # https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2
+  # or a recent dump from https://dumps.wikimedia.org/enwiki.
+  wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 data/raw/wiki.bz2
   # Create a folder for interim data
   mkdir -p data/interim
   # Extract text from the wikipedia dump
   cd src/data/wikiextractor
-  python WikiExtractor.py --process [num_processes] --json -co ../../../data/interim/wiki ../../../data/raw/[wiki_dump_file_name]
-  # Replace ~num_processes~ witht the number of CPU cores and ~wiki_dump_file_name~ with the name of the wikipedia dump usually ending with ~.xml.bz2~
+  python WikiExtractor.py --process 32 --json -co ../../../data/interim/wiki ../../../data/raw/wiki.bz2
+  # Replace --process 32  with --process n where n is the number of available CPU cores.
 #+end_src
 
 
