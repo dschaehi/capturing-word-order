@@ -14,7 +14,8 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   # Download an archived Wikipedia dump (alternatively, you can download
   # a recent dump from https://dumps.wikimedia.org/enwiki.) and save it
   # as data/raw/wiki.bz2.
-  wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 data/raw/wiki.bz2
+  wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 \
+       data/raw/wiki.bz2
   # Create a folder for interim data
   mkdir -p data/interim
   # Extract text from the wikipedia dump as data/interim/wiki.json.
