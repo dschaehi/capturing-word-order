@@ -32,11 +32,17 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   cd ../../data/interim
   find wiki -name '*bz2' -exec bunzip2 -k -c {} \; > wiki.json
 #+end_src
-*** Generate tokenized sentences
+*** Generate Tokenized Wikipedia Sentences
 #+begin_src sh
-python -c "import nltk; nltk.download('punkt')"
-cd src/data/
-python tokenize_wiki.py 
+  # Download  nltk 'punkt' package that is necesseray for tokenization
+  python -c "import nltk; nltk.download('punkt')"
+
+  # Create a folder for processed data
+  mkdir data/processed
+
+  # Generate tokenized 1 million wikipedia sentences
+  cd src/data/
+  python tokenize_wiki.py ../../data/interim/wiki.json ../../data/processed 1000000
 #+end_src
 
 
