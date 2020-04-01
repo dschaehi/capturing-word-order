@@ -22,6 +22,9 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   # available CPU cores.
   cd src/data/wikiextractor
   python WikiExtractor.py --process 32 --json -co ../../../data/interim/wiki ../../../data/raw/wiki.bz2
+  # Combine the articles as one json file.
+  cd ../../data/interim
+  find wiki -name '*bz2' -exec bunzip2 -k -c {} \; > wiki.json
 #+end_src
 *** Generate tokenized sentences
 #+begin_src sh
