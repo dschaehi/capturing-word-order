@@ -9,20 +9,25 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   # Update and initialize submodules
   git submodule update
   git submodule init
+
   # Create a folder for raw data
   mkdir -p data/raw
+
   # Download an archived Wikipedia dump (alternatively, you can download
   # a recent dump from https://dumps.wikimedia.org/enwiki.) and save it
   # as data/raw/wiki.bz2.
   wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 \
        data/raw/wiki.bz2
+
   # Create a folder for interim data
   mkdir -p data/interim
+
   # Extract text from the wikipedia dump as data/interim/wiki.json.
   # Replace --process 32 with --process n where n is the number of
   # available CPU cores.
   cd src/data/wikiextractor
   python WikiExtractor.py --process 32 --json -co ../../../data/interim/wiki ../../../data/raw/wiki.bz2
+
   # Combine the articles as one json file.
   cd ../../data/interim
   find wiki -name '*bz2' -exec bunzip2 -k -c {} \; > wiki.json
