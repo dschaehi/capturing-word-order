@@ -17,7 +17,7 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   # a recent dump from https://dumps.wikimedia.org/enwiki.) and save it
   # as data/raw/wiki.bz2.
   wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 \
-       data/raw/wiki.bz2
+       -P data/raw/wiki.bz2
 
   # Create a folder for interim data
   mkdir -p data/interim
@@ -44,5 +44,8 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   cd src/data/
   python tokenize_wiki.py ../../data/interim/wiki.json ../../data/processed 1000000
 #+end_src
-
+*** Download fastText word vectors
+#+begin_src sh
+  wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip -P data/raw/
+#+end_src
 
