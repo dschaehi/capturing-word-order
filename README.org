@@ -40,9 +40,11 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   # Create a folder for processed data
   mkdir data/processed
 
-  # Generate tokenized 1 million wikipedia sentences
+  # Generate tokenized 1 million wikipedia sentences. The output is stored in processed data folder.
   cd src/data/
-  python tokenize_wiki.py ../../data/interim/wiki.json ../../data/processed 1000000
+  python tokenize_wiki.py
+  # Generate tokenized 1 million wikipedia sentences of length <= 25.
+  python tokenize_wiki.py --max_len 25
 #+end_src
 *** Download fastText word vectors
 #+begin_src sh
