@@ -17,9 +17,10 @@ ROOT = Path(repo.working_tree_dir)
 PROCESSED = ROOT / "data" / "processed"
 
 
-def load_wiki(wiki_dir=PROCESSED, n_sents=1000000):
-    filename = "wiki_{}.pkl".format(
-        "_".join(humanize.intword(n_sents, format="%.0f").split())
+def load_wiki(wiki_dir=PROCESSED, n_sents=1000000, max_len=-1):
+    filename = "wiki_{}{}.pkl".format(
+        "_".join(humanize.intword(n_sents, format="%.0f").split()),
+        f"_maxlen_{max_len}" if max_len > 0 else "",
     )
     with open(PROCESSED / filename, "rb") as f:
         wiki_corpus = pickle.load(f)
