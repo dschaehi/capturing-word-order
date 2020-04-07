@@ -192,7 +192,7 @@ class BigramFunction:
         # A word vector has a zero entry, only if it corresponds to a
         # padding. So set the bigram vectors to zero, if the minuend
         # of the diffrence is zero.
-        return (vsents[:, 1:, :] - vsents[:, :-1, :]) * (vsents[:, 1:, :] > 0).float()
+        return (vsents[:, 1:, :] - vsents[:, :-1, :]) * (vsents[:, 1:, :] != 0).float()
 
     def concat(self, vsents):
         """
@@ -203,7 +203,7 @@ class BigramFunction:
         # padding. So set the left part to zero, if the right
         # part is zero.
         return torch.cat(
-            (vsents[:, :-1, :] * (vsents[:, 1:, :] > 0).float(), vsents[:, 1:, :]),
+            (vsents[:, :-1, :] * (vsents[:, 1:, :] != 0).float(), vsents[:, 1:, :]),
             dim=2,
         )
 
