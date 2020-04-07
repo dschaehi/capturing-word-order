@@ -177,7 +177,7 @@ class Corpus:
         )
 
 
-class BigramFunction:
+class BigramEncoder:
     """
     "diff: Vector difference"
     """
