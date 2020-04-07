@@ -166,6 +166,15 @@ class BigramEncoder:
         # of the diffrence is zero.
         return (vsents[:, 1:, :] - vsents[:, :-1, :]) * (vsents[:, 1:, :] != 0).float()
 
+    def sign(self, vsents):
+        return self.diff(vsents).sign()
+
+    def tanh(self, vsents):
+        return self.diff(vsents).tanh()
+
+    def tanh10(self, vsents):
+        return (10 * self.diff(vsents)).tanh()
+
     def concat(self, vsents):
         """
         vsents: (batch_size, max_sent_len, word_vec_dim)
