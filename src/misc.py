@@ -28,51 +28,24 @@ def load_wiki(wiki_dir=PROCESSED, n_sents=1000000, max_len=-1):
 
 
 class WV:
-    def __init__(self, word_vecs, word_index, has_padding=True, padding_ix=0):
+    def __init__(self, word_vecs, word_index):
         d = word_vecs.size(1)
         self.vocab = set(word_index.keys())
         self.oovs = set([])
-        self.has_padding = has_padding
-        if self.has_padding:
-            self.padding_ix = padding_ix
-            if self.padding_ix == 0:
-                if not word_vecs[0].equal(torch.zeros((d,))):
-                    self.vecs = torch.cat((torch.zeros((1, d)), word_vecs), dim=0)
-                    self.dict = {word: word_index[word] + 1 for word in self.vocab}
-            elif self.padding_ix == -1:
-                if not word_vecs[-1].equal(torch.zeros((d,))):
-                    self.vecs = torch.cat((word_vecs, torch.zeros((1, d))), dim=0)
-                    self.dict = word_index
-        else:
-            self.vecs = word_vecs
-            self.dict = word_index
+        self.padding_ix = 0
+        self.oov_ix = 1
+        self.vecs = torch.cat(
+            (torch.zeros((1, d)), torch.zeros((1, d)), word_vecs), dim=0
+        )
+        self.dict = {word: word_index[word] + 2 for word in self.vocab}
 
     def adjust(self, vocab):
         common_vocab = sorted(list(self.vocab & vocab))
         self.oovs = self.oovs | (vocab - self.vocab)
-        if self.has_padding:
-            if self.padding_ix == 0:
-                ixs = [0] + [self.dict[word] for word in common_vocab]
-                self.vecs = self.vecs[ixs]
-                self.dict = dict(
-                    zip(
-                        common_vocab + list(self.oovs),
-                        list(range(1, len(common_vocab) + 1)) + [0] * len(self.oovs),
-                    )
-                )
-            elif self.padding_ix == -1:
-                ixs = [self.dict[word] for word in common_vocab] + [-1]
-                self.vecs = self.vecs[ixs]
-                self.dict = dict(
-                    zip(
-                        common_vocab + list(self.oovs),
-                        list(range(len(common_vocab))) + [-1] * len(self.oovs),
-                    )
-                )
-        else:
-            ixs = [self.dict[word] for word in common_vocab]
-            self.vecs = self.vecs[ixs]
-            self.dict = dict(zip(common_vocab, list(range(len(common_vocab)))))
+        ixs = [0, 1] + [self.dict[word] for word in common_vocab]
+        self.vecs = self.vecs[ixs]
+        self.dict = dict(zip(common_vocab, range(2, len(common_vocab) + 2)))
+        self.dict.update(dict(zip(list(self.oovs), [self.oov_ix] * len(self.oovs))))
         self.vocab = vocab
 
     def extend(self, vocab):
@@ -90,8 +63,6 @@ class WV:
         device=None,
     ):
         max_sent_len = max((len(sent) for sent in sents))
-        if not self.has_padding:
-            raise Exception("The instance is not initialized with a padding.")
         if filter_stopwords:
             st_words = set(stopwords.words("english"))
             sents = [
