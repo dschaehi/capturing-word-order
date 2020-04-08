@@ -35,7 +35,7 @@ class WV:
         self.padding_ix = 0
         self.oov_ix = 1
         self.vecs = torch.cat(
-            (torch.zeros((1, d)), torch.zeros((1, d)), word_vecs), dim=0
+            (torch.zeros((1, d)), torch.zeros((1, d)), word_vecs,), dim=0,
         )
         self.dict = {word: word_index[word] + 2 for word in self.vocab}
 
@@ -60,7 +60,6 @@ class WV:
         filter_stopwords=False,
         return_sent_lengths=False,
         adjust=False,
-        device=None,
     ):
         max_sent_len = max((len(sent) for sent in sents))
         if filter_stopwords:
@@ -79,9 +78,7 @@ class WV:
                 ]
                 for sent in sents
             ]
-        sent_lengths = torch.tensor(
-            [len(sent) for sent in sents], dtype=torch.int64, device=device
-        )
+        sent_lengths = torch.tensor([len(sent) for sent in sents], dtype=torch.int64)
         if adjust:
             vocab = set(itertools.chain.from_iterable(sents))
             self.adjust(vocab)
@@ -92,7 +89,6 @@ class WV:
                 for sent in sents
             ],
             dtype=torch.int64,
-            device=device,
         )
         if return_sent_lengths:
             return ix_sents, sent_lengths
@@ -100,11 +96,11 @@ class WV:
             return ix_sents
 
     @staticmethod
-    def load(file_path, has_padding=True, padding_ix=0, device=None):
+    def load(file_path, has_padding=True, padding_ix=0):
         with open(file_path, "rb") as f:
             word_index, word_vecs = pickle.load(f)
         return WV(
-            torch.tensor(word_vecs, dtype=torch.float, device=device),
+            torch.tensor(word_vecs, dtype=torch.float),
             word_index,
             has_padding,
             padding_ix,
@@ -113,13 +109,7 @@ class WV:
 
 class Corpus:
     def __init__(
-        self,
-        name,
-        sents,
-        wv,
-        cond_lower_case=False,
-        filter_stopwords=False,
-        device=None,
+        self, name, sents, wv, cond_lower_case=False, filter_stopwords=False,
     ):
         """dataset: a list of sentences, which are list of words."""
         self.name = name
@@ -129,13 +119,10 @@ class Corpus:
             filter_stopwords=filter_stopwords,
             return_sent_lengths=True,
             adjust=True,
-            device=device,
         )
 
     @staticmethod
-    def load(
-        name, file_path, wv, cond_lower_case=False, filter_stopwords=False, device=None
-    ):
+    def load(name, file_path, wv, cond_lower_case=False, filter_stopwords=False):
         with open(file_path, "rb") as f:
             sents = pickle.load(f)
         return Corpus(
@@ -144,7 +131,6 @@ class Corpus:
             wv,
             cond_lower_case=cond_lower_case,
             filter_stopwords=filter_stopwords,
-            device=device,
         )
 
 
