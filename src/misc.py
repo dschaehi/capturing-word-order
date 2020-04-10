@@ -99,12 +99,7 @@ class WV:
     def load(file_path, has_padding=True, padding_ix=0):
         with open(file_path, "rb") as f:
             word_index, word_vecs = pickle.load(f)
-        return WV(
-            torch.tensor(word_vecs, dtype=torch.float),
-            word_index,
-            has_padding,
-            padding_ix,
-        )
+        return WV(torch.tensor(word_vecs, dtype=torch.float), word_index,)
 
 
 class Corpus:
