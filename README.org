@@ -1,4 +1,3 @@
-
 Capturing Word Order in Averaging Based Sentence Embeddings
 ** Installation
 *** Requirements
@@ -6,30 +5,32 @@ Capturing Word Order in Averaging Based Sentence Embeddings
 - tqdm
 *** Prepare Wikipedia Corpus
 #+begin_src sh
+  # Store the path of the current folder as ~cwd~
+  cwd=$(pwd)
   # Update and initialize submodules
   git submodule update
   git submodule init
 
   # Create a folder for raw data
-  mkdir -p data/raw
+  mkdir -p $cwd/data/raw
 
   # Download an archived Wikipedia dump (alternatively, you can download
   # a recent dump from https://dumps.wikimedia.org/enwiki.) and save it
   # as data/raw/wiki.bz2.
   wget https://archive.org/download/enwiki-20190201/enwiki-20190201-pages-articles-multistream.xml.bz2 \
-       -P data/raw/wiki.bz2
+       -P $cwd/data/raw/wiki.bz2
 
   # Create a folder for interim data
-  mkdir -p data/interim
+  mkdir -p $cwd/data/interim
 
   # Extract text from the wikipedia dump as data/interim/wiki.json.
   # Replace --process 32 with --process n where n is the number of
   # available CPU cores.
-  cd src/data/wikiextractor
+  cd $cwd/src/data/wikiextractor
   python WikiExtractor.py --process 32 --json -co ../../../data/interim/wiki ../../../data/raw/wiki.bz2
 
   # Combine the articles as one json file.
-  cd ../../data/interim
+  cd $cwd/data/interim
   find wiki -name '*bz2' -exec bunzip2 -k -c {} \; > wiki.json
 #+end_src
 *** Generate Tokenized Wikipedia Sentences
@@ -38,16 +39,25 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   python -c "import nltk; nltk.download('punkt')"
 
   # Create a folder for processed data
-  mkdir data/processed
+  mkdir -p $cwd/data/processed
 
   # Generate tokenized 1 million wikipedia sentences. The output is stored in processed data folder.
-  cd src/data/
+  cd $cwd/src/data/
   python tokenize_wiki.py
+
+  # TODO: Check whether next step is necessary.
   # Generate tokenized 1 million wikipedia sentences of length <= 25.
   python tokenize_wiki.py --max_len 25
+  # Generate tokenized 2 million wikipedia sentences of length <= 25.
+  python tokenize_wiki.py --n_sents 2000000 --max_len 25
+#+end_src
+*** Split the data into training, validation and test sets
+#+begin_src sh
+cd $cwd/
+python -m src.data.make_splits
 #+end_src
 *** Download fastText word vectors
 #+begin_src sh
   wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip -P data/raw/
 #+end_src
-
+*** 
