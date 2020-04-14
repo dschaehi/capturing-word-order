@@ -51,7 +51,7 @@ if __name__ == "__main__":
         stop={
             "training_iteration": 1
             if args.smoke_test
-            else config["train"]["num_epochs"]
+            else config["num_epochs"]
         },
         checkpoint_at_end=True,
         verbose=1,
