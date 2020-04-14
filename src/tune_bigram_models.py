@@ -40,6 +40,7 @@ if __name__ == "__main__":
         "batch_size": tune.grid_search([300]),
         "num_epochs": max(100000 // corpus_size, 1),
         "test_freq": max(10000 // corpus_size, 1),
+        "seed": 0,
     }
 
     analysis = tune.run(
