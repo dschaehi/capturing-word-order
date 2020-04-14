@@ -38,7 +38,7 @@ if __name__ == "__main__":
         "margin": tune.uniform(0.0, 1.0),
         "lr": tune.loguniform(0.001, 1.0),
         "batch_size": tune.grid_search([300]),
-        "num_epochs": max(1000000 // corpus_size, 1),
+        "num_epochs": max(10000000 // corpus_size, 1),
         "test_freq": max(10000 // corpus_size, 1),
         "seed": 0,
     }
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         TrainBigramNN,
         name=experiment_name,
         config=config,
-        num_samples=10 if args.smoke_test else 1,
+        num_samples=1 if args.smoke_test else 100,
         # trial_name_creator=trial_str_creator,
         resources_per_trial={"cpu": 8, "gpu": 1},
         stop={"training_iteration": 1 if args.smoke_test else config["num_epochs"]},
