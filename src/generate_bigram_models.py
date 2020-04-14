@@ -1,11 +1,10 @@
-import math
 import pickle
 from pathlib import Path
 
 import git
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from ray import tune
 from tqdm.auto import tqdm
 
 from analyze_bigram_encoders import gen_neg_bigram_ixs, gen_pos_bigram_ixs
@@ -17,6 +16,7 @@ from misc import (
     LossFunction,
     process_word_vecs,
 )
+from models import Net
 
 
 repo = git.Repo(Path(".").absolute(), search_parent_directories=True)
@@ -29,6 +29,7 @@ device = torch.device("cuda" if torch.cuda.is_available else "cpu")
 
 
 def train(
+    wv,
     ix_sents,
     sent_lengths,
     ix_sents_dev,
@@ -58,7 +59,6 @@ def train(
                 ix_sents_batch = ix_sents[i : i + batch_size].to(device)
                 pos_bigram_ixs = gen_pos_bigram_ixs(ix_sents_batch, device=device)
                 neg_bigram_ixs = gen_neg_bigram_ixs(ix_sents_batch, device=device)
-
                 pos_vbigrams = wv.vecs[pos_bigram_ixs].to(device)
                 neg_vbigrams = wv.vecs[neg_bigram_ixs].to(device)
                 vsents = wv.vecs[ix_sents_batch].to(device)
@@ -73,6 +73,7 @@ def train(
                 pbar.write(
                     "{:5.4f}".format(
                         test(
+                            wv,
                             ix_sents_dev,
                             sent_lengths_dev,
                             model,
@@ -85,7 +86,9 @@ def train(
                 )
 
 
-def test(ix_sents, sent_lengths, model, word_vecs, dist_fn, batch_size, device=None):
+def test(
+    wv, ix_sents, sent_lengths, model, word_vecs, dist_fn, batch_size, device=None
+):
     ix_sents = ix_sents.to(device)
     correct = 0
     with torch.no_grad():
@@ -105,71 +108,21 @@ def test(ix_sents, sent_lengths, model, word_vecs, dist_fn, batch_size, device=N
     return accuracy
 
 
-class ExpandedLinear(nn.Module):
-    def __init__(self, in_bigram_vec_dim, out_bigram_vec_dim):
-        super().__init__()
-        self.weight = nn.Parameter(torch.Tensor(in_bigram_vec_dim, out_bigram_vec_dim))
-        self.bias = nn.Parameter(torch.Tensor(out_bigram_vec_dim))
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        stdv = 1.0 / math.sqrt(self.weight.size(1))
-        self.weight.data.uniform_(-stdv, stdv)
-        self.bias.data.uniform_(-stdv, stdv)
-
-    def forward(self, bigram_vecs):
-        """
-        bigram_vecs: (batch_size, max_sent_len, in_bigram_vec_dim)
-        """
-        # W: (batch_size, max_sent_len, in_bigram_vec_dim, out_bigram_vec_dim)
-        W = self.weight.expand(*bigram_vecs.size(), self.weight.size(1))
-        # bigram_vecs: (batch_size, max_sent_len, 1, in_bigram_vec_dim)
-        bigram_vecs = bigram_vecs.unsqueeze(2)
-        # out: (batch_size, max_sent_len, 1, out_bigram_vec_dim)
-        out = torch.matmul(bigram_vecs, W)
-        # out: (batch_size, max_sent_len, out_bigram_vec_dim)
-        out = out.squeeze(2)
-        out += self.bias
-        return out
-
-    def extra_repr(self):
-        return "in_bigram_vec_dim={}, out_bigram_vec_dim={}".format(*self.weight.size())
-
-
-class Net(nn.Module):
-    def __init__(self, word_vec_dim, bigram_fn, out_bigram_vec_dim):
-        super().__init__()
-        self.bigram_fn = bigram_fn
-        # Compute the input bigram vector dimension for the linear layer.
-        in_bigram_vec_dim = bigram_fn(torch.randn((1, 2, word_vec_dim))).size(2)
-        self.out_bigram_vec_dim = out_bigram_vec_dim
-        self.T = ExpandedLinear(in_bigram_vec_dim, self.out_bigram_vec_dim)
-
-    def forward(self, vec_sents, aggregate=True):
-        # in_bigram_vecs: (batch_size, max_sent_len - 1, in_bigram_vec_dim)
-        in_bigram_vecs = self.bigram_fn(vec_sents)
-        # out_bigram_vecs: (batch_size, max_sent_len - 1, out_bigram_vec_dim)
-        out_bigram_vecs = (
-            self.T(in_bigram_vecs)
-            * (in_bigram_vecs > 0)[:, :, : self.out_bigram_vec_dim].float()
-        )
-        if aggregate:
-            # output: (batch_size, out_bigram_vec_dim)
-            output = torch.sum(torch.tanh(out_bigram_vecs), dim=1)
-        else:
-            # output: (batch_size, max_sent_len - 1, out_bigram_vec_dim)
-            output = torch.tanh(out_bigram_vecs)
-        return output
-
-
 def generate_bigram_nn_models():
+    print("Loading word vectors...")
+    word2index, word_vecs = process_word_vecs(FAST_TEXT)
+    # Note that the word embeddings are normalized.
+    wv = WV(F.normalize(word_vecs), word2index)
+    # wv = WV(word_vecs, word2index)
+    print("Done.")
+
     for i in range(2, 7):
         corpus_size = 10 ** i
         bigram_fn_name = "diff"
         out_bigram_dim = 300
         dist_fn_name = "cos_dist"
         loss_fn_name = "mrl"
-        margin = 0.1
+        margin = 0.3
         lr = 0.1
         num_epochs = max(100000 // corpus_size, 1)
         batch_size = 300
@@ -194,6 +147,7 @@ def generate_bigram_nn_models():
         print("Traninig on Wikipedia corpus of size {}".format(corpus_size))
 
         train(
+            wv,
             corpus.ix_sents[: -len(wiki_valid)],
             corpus.sent_lengths[: -len(wiki_valid)],
             corpus.ix_sents[-len(wiki_valid) :],
@@ -217,6 +171,7 @@ def generate_bigram_nn_models():
         print("Done.")
         print("Start testing...")
         test_accuracy = test(
+            wv,
             corpus.ix_sents[-len(wiki_valid) :],
             corpus.sent_lengths[-len(wiki_valid) :],
             model,
@@ -229,9 +184,69 @@ def generate_bigram_nn_models():
         print("test accuracy: {}".format(test_accuracy))
 
 
-print("Loading word vectors...")
-word2index, word_vecs = process_word_vecs(FAST_TEXT)
-# Note that the word embeddings are normalized.
-wv = WV(F.normalize(word_vecs), word2index)
-print("Done.")
-generate_bigram_nn_models()
+class TrainBigramNN(tune.Trainable):
+    def _setup(self, config):
+        print("Loading word vectors...")
+        word2index, word_vecs = process_word_vecs(FAST_TEXT)
+        # Note that the word embeddings are normalized.
+        self.wv = WV(F.normalize(word_vecs), word2index)
+        # wv = WV(word_vecs, word2index)
+        print("Done.")
+        corpus_size = config["corpus_size"]
+        bigram_fn_name = "diff"
+        out_bigram_dim = 300
+        dist_fn_name = "cos_dist"
+        loss_fn_name = "mrl"
+        margin = config["margin"]
+        self.lr = config["lr"]
+        self.num_epochs = config["num_epochs"]
+        self.batch_size = config["batch_size"]
+        self.test_model = True
+        self.test_freq = config["test_freq"]
+        with open(PROCESSED / "train.{}.pkl".format(str(corpus_size)), "rb") as f:
+            wiki_train = pickle.load(f)
+        with open(PROCESSED / "valid.pkl", "rb") as f:
+            wiki_valid = pickle.load(f)
+        wiki_combined = wiki_train + wiki_valid
+        self.corpus = Corpus("wiki", wiki_combined, self.wv)
+        self.model = Net(
+            self.wv.vecs.size(1), BigramEncoder(bigram_fn_name), out_bigram_dim
+        )
+        self.model.to(device)
+        self.dist_fn = DistanceFunction(dist_fn_name)
+        self.loss_fn = LossFunction(loss_fn_name, margin=margin)
+        self.seed = 0
+        self.device = device
+        print("Traninig on Wikipedia corpus of size {}".format(corpus_size))
+
+    def _train(self):
+        result = train(
+            self.corpus.ix_sents[: -len(self.wiki_valid)],
+            self.corpus.sent_lengths[: -len(self.wiki_valid)],
+            self.corpus.ix_sents[-len(self.wiki_valid) :],
+            self.corpus.sent_lengths[-len(self.wiki_valid) :],
+            self.model,
+            self.wv.vecs,
+            self.dist_fn,
+            self.loss_fn,
+            self.lr,
+            self.num_epochs,
+            self.batch_size,
+            self.test_model,
+            self.test_freq,
+            self.seed,
+            self.device,
+        )
+        metrics = {}
+        for split in {"train", "valid"}:
+            metrics[split] = {**result[split], **self.best_result[split]}
+        return metrics
+
+    def _save(self, tmp_checkpoint_dir):
+        checkpoint_path = str(Path(tmp_checkpoint_dir) / "model.pth")
+        torch.save(self.model.state_dict(), checkpoint_path)
+        return checkpoint_path
+
+    def _restore(self, tmp_checkpoint_dir):
+        checkpoint_path = str(Path(tmp_checkpoint_dir) / "model.pth")
+        self.model.load_state_dict(torch.load(checkpoint_path))
