@@ -30,7 +30,7 @@ if __name__ == "__main__":
     if not args.smoke_test and repo.is_dirty():
         raise RepositoryDirtyError(repo, "Have you forgotten to commit the changes?")
 
-    corpus_size = 100000
+    corpus_size = 1000000
     config = {
         # A trick to log the SHA of the git HEAD.
         "SHA": tune.grid_search([sha]),
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         TrainBigramNN,
         name=experiment_name,
         config=config,
-        num_samples=1 if args.smoke_test else 100,
+        num_samples=1 if args.smoke_test else 1000,
         # trial_name_creator=trial_str_creator,
         resources_per_trial={"cpu": 8, "gpu": 1},
         stop={"training_iteration": 1 if args.smoke_test else config["num_epochs"]},
