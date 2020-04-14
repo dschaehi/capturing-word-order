@@ -49,6 +49,7 @@ def train(
     torch.manual_seed(seed)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     total = num_epochs * ix_sents.size(0)
+    accuracy = 0.0
     with tqdm(total=total) as pbar:
         for epoch in range(num_epochs):
             perm = torch.randperm(ix_sents.shape[0])
@@ -70,20 +71,18 @@ def train(
                 optimizer.step()
                 pbar.update(len(ix_sents_batch))
             if test_model and (epoch + 1) % test_freq == 0:
-                pbar.write(
-                    "{:5.4f}".format(
-                        test(
-                            wv,
-                            ix_sents_dev,
-                            sent_lengths_dev,
-                            model,
-                            word_vecs,
-                            dist_fn,
-                            batch_size,
-                            device=device,
-                        )
-                    )
+                accuracy = test(
+                    wv,
+                    ix_sents_dev,
+                    sent_lengths_dev,
+                    model,
+                    word_vecs,
+                    dist_fn,
+                    batch_size,
+                    device=device,
                 )
+                pbar.write("{:5.4f}".format(accuracy))
+    return {"accuracy": accuracy}
 
 
 def test(
@@ -221,10 +220,11 @@ class TrainBigramNN(tune.Trainable):
 
     def _train(self):
         result = train(
-            self.corpus.ix_sents[: len(self.corpus_size)],
-            self.corpus.sent_lengths[: len(self.corpus_size)],
-            self.corpus.ix_sents[len(self.corpus_size) :],
-            self.corpus.sent_lengths[len(self.corpus_size) :],
+            self.wv,
+            self.corpus.ix_sents[: self.corpus_size],
+            self.corpus.sent_lengths[: self.corpus_size],
+            self.corpus.ix_sents[self.corpus_size :],
+            self.corpus.sent_lengths[self.corpus_size :],
             self.model,
             self.wv.vecs,
             self.dist_fn,
@@ -237,10 +237,7 @@ class TrainBigramNN(tune.Trainable):
             self.seed,
             self.device,
         )
-        metrics = {}
-        for split in {"train", "valid"}:
-            metrics[split] = {**result[split], **self.best_result[split]}
-        return metrics
+        return result
 
     def _save(self, tmp_checkpoint_dir):
         checkpoint_path = str(Path(tmp_checkpoint_dir) / "model.pth")
