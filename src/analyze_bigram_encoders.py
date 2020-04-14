@@ -9,10 +9,12 @@ from torch.distributions.categorical import Categorical
 from tqdm.auto import trange
 
 from misc import BigramEncoder
+from models import Net
 
 
 repo = git.Repo(Path(".").absolute(), search_parent_directories=True)
 ROOT = Path(repo.working_tree_dir)
+MODELS = ROOT / "models"
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,7 +26,20 @@ def analyze_bigram_encoder(
     ix_sents = ix_sents.to(device)
     if smoke_test:
         ix_sents = ix_sents[:1000]
-    bigram_encoder = BigramEncoder(bigram_encoder_name)
+    if bigram_encoder_name == "T":
+        model = Net(wv.vecs.size(1), BigramEncoder("diff"), 300)
+        model.load_state_dict(
+            torch.load(MODELS / "bigram_nn_wiki_train_{}.pth".format(str(1000000))),
+        )
+        model.to(device)
+
+        def bigram_encoder(vec_sents):
+            with torch.no_grad():
+                result = model(vec_sents, aggregate=False)
+            return result
+
+    else:
+        bigram_encoder = BigramEncoder(bigram_encoder_name)
     cos = nn.CosineSimilarity(dim=2)
     result_comparison = torch.tensor([], device=device).bool()
     result_pos_dist = torch.tensor([], device=device).float()
@@ -40,7 +55,6 @@ def analyze_bigram_encoder(
         comparison = cos(bigram_vsents, bigram_sentvecs).min(dim=1, keepdim=True).values
         pos_dist = cos(pos_bigram_vecs, bigram_sentvecs)
         neg_dist = cos(neg_bigram_vecs, bigram_sentvecs)
-
         result_comparison = torch.cat(
             (result_comparison, comparison > neg_dist,), dim=0
         )
@@ -59,6 +73,7 @@ def plot_result(
     add_legend=True,
 ):
     bigram_encoder_name_latex = {
+        "T": r"f_{T}",
         "sign": r"f_{\infty}",
         "tanh": r"f_{1}",
         "tanh10": r"f_{10}",
