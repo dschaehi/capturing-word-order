@@ -192,7 +192,7 @@ class TrainBigramNN(tune.Trainable):
         self.wv = WV(F.normalize(word_vecs), word2index)
         # wv = WV(word_vecs, word2index)
         print("Done.")
-        corpus_size = config["corpus_size"]
+        self.corpus_size = config["corpus_size"]
         bigram_fn_name = "diff"
         out_bigram_dim = 300
         dist_fn_name = "cos_dist"
@@ -203,7 +203,7 @@ class TrainBigramNN(tune.Trainable):
         self.batch_size = config["batch_size"]
         self.test_model = True
         self.test_freq = config["test_freq"]
-        with open(PROCESSED / "train.{}.pkl".format(str(corpus_size)), "rb") as f:
+        with open(PROCESSED / "train.{}.pkl".format(str(self.corpus_size)), "rb") as f:
             wiki_train = pickle.load(f)
         with open(PROCESSED / "valid.pkl", "rb") as f:
             wiki_valid = pickle.load(f)
@@ -217,14 +217,14 @@ class TrainBigramNN(tune.Trainable):
         self.loss_fn = LossFunction(loss_fn_name, margin=margin)
         self.seed = 0
         self.device = device
-        print("Traninig on Wikipedia corpus of size {}".format(corpus_size))
+        print("Traninig on Wikipedia corpus of size {}".format(self.corpus_size))
 
     def _train(self):
         result = train(
-            self.corpus.ix_sents[: -len(self.wiki_valid)],
-            self.corpus.sent_lengths[: -len(self.wiki_valid)],
-            self.corpus.ix_sents[-len(self.wiki_valid) :],
-            self.corpus.sent_lengths[-len(self.wiki_valid) :],
+            self.corpus.ix_sents[: len(self.corpus_size)],
+            self.corpus.sent_lengths[: len(self.corpus_size)],
+            self.corpus.ix_sents[len(self.corpus_size) :],
+            self.corpus.sent_lengths[len(self.corpus_size) :],
             self.model,
             self.wv.vecs,
             self.dist_fn,
