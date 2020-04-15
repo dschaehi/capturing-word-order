@@ -21,16 +21,25 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def analyze_bigram_encoder(
-    bigram_encoder_name, wv, ix_sents, batch_size, smoke_test=False, device=None
+    bigram_encoder_name,
+    wv,
+    ix_sents,
+    batch_size,
+    model_path=None,
+    smoke_test=False,
+    device=None,
 ):
     ix_sents = ix_sents.to(device)
     if smoke_test:
         ix_sents = ix_sents[:1000]
     if bigram_encoder_name == "T":
         model = Net(wv.vecs.size(1), BigramEncoder("diff"), 300)
-        model.load_state_dict(
-            torch.load(MODELS / "bigram_nn_wiki_train_{}.pth".format(str(1000000))),
-        )
+        if model_path:
+            model.load_state_dict(torch.load(model_path))
+        else:
+            model.load_state_dict(
+                torch.load(MODELS / "bigram_nn_wiki_train_{}.pth".format(str(1000000))),
+            )
         model.to(device)
 
         def bigram_encoder(vec_sents):
@@ -69,6 +78,7 @@ def plot_result(
     ix_sents,
     batch_size,
     outdir=ROOT / "paper/img",
+    model_path=None,
     seed=0,
     add_legend=True,
 ):
@@ -81,7 +91,12 @@ def plot_result(
     }[bigram_encoder_name]
     torch.manual_seed(seed)
     result_comparison, result_pos_dist, result_neg_dist = analyze_bigram_encoder(
-        bigram_encoder_name, wv, ix_sents, batch_size, device=device
+        bigram_encoder_name,
+        wv,
+        ix_sents,
+        batch_size,
+        model_path=model_path,
+        device=device,
     )
 
     print(
