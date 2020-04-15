@@ -124,7 +124,7 @@ class TrainBigramNN(tune.Trainable):
         with open(PROCESSED / "valid.pkl", "rb") as f:
             wiki_valid = pickle.load(f)
         wiki_combined = wiki_train + wiki_valid
-        self.corpus = Corpus("wiki", wiki_combined, self.wv)
+        self.corpus = Corpus("wiki", wiki_combined, self.wv, filter_stopwords=True)
         self.model = Net(
             self.wv.vecs.size(1), BigramEncoder(bigram_fn_name), out_bigram_dim
         )
