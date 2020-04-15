@@ -152,15 +152,40 @@ def gen_pos_bigram_ixs(ix_sents, device=None):
     ]
 
 
+# def gen_neg_bigram_ixs(ix_sents, device=None):
+#     batch_size, chunk_size = ix_sents.shape
+#     sent_lengths = ix_sents.sign().sum(dim=1)
+#     # ``distr_ixs1`` determines from where to sample the first index.
+#     # All indices but the last one allows for combining with ``sent_lengths`` - 1
+#     # different second indices.
+#     distr_ixs1 = (sent_lengths.view(-1, 1) - 1) * ix_sents.sign().to(device)
+#     # The last index allows for combining with ``sent_lengths`` different second indices
+#     distr_ixs1[torch.arange(batch_size), sent_lengths - 1] = sent_lengths
+#     ixs1 = Categorical(distr_ixs1.float()).sample().view(-1, 1)
+#     # ``distr_ixs2`` determines from where to sample the second index.
+#     # The boundary case is resolved by initializing  ``distr_ixs2`` with
+#     # one extra column and then removing it later.
+#     distr_ixs2 = torch.zeros((batch_size, chunk_size + 1), device=device)
+#     distr_ixs2[:, :-1] = ix_sents.sign()
+#     # The indices that lead to positive bigrams are avoided by setting
+#     # the corresponding value in ``distribution`` to zero.
+#     distr_ixs2[torch.arange(batch_size).view(-1, 1), ixs1 + 1] = 0
+#     distr_ixs2 = distr_ixs2[:, :-1]
+#     ixs2 = Categorical(distr_ixs2).sample().view(-1, 1)
+#     return ix_sents[
+#         torch.arange(batch_size).view(-1, 1), torch.cat((ixs1, ixs2), dim=1)
+#     ]
+
+
 def gen_neg_bigram_ixs(ix_sents, device=None):
     batch_size, chunk_size = ix_sents.shape
     sent_lengths = ix_sents.sign().sum(dim=1)
     # ``distr_ixs1`` determines from where to sample the first index.
-    # All indices but the last one allows for combining with ``sent_lengths`` - 1
+    # All indices but the last one allows for combining with ``sent_lengths`` - 2
     # different second indices.
-    distr_ixs1 = (sent_lengths.view(-1, 1) - 1) * ix_sents.sign().to(device)
-    # The last index allows for combining with ``sent_lengths`` different second indices
-    distr_ixs1[torch.arange(batch_size), sent_lengths - 1] = sent_lengths
+    distr_ixs1 = (sent_lengths.view(-1, 1) - 2) * ix_sents.sign().to(device)
+    # The last index allows for combining with ``sent_lengths`` - 1 different second indices
+    distr_ixs1[torch.arange(batch_size), sent_lengths - 1] = sent_lengths - 1
     ixs1 = Categorical(distr_ixs1.float()).sample().view(-1, 1)
     # ``distr_ixs2`` determines from where to sample the second index.
     # The boundary case is resolved by initializing  ``distr_ixs2`` with
@@ -170,6 +195,8 @@ def gen_neg_bigram_ixs(ix_sents, device=None):
     # The indices that lead to positive bigrams are avoided by setting
     # the corresponding value in ``distribution`` to zero.
     distr_ixs2[torch.arange(batch_size).view(-1, 1), ixs1 + 1] = 0
+    # Also avoid bigram with same words.
+    distr_ixs2[torch.arange(batch_size).view(-1, 1), ixs1] = 0
     distr_ixs2 = distr_ixs2[:, :-1]
     ixs2 = Categorical(distr_ixs2).sample().view(-1, 1)
     return ix_sents[
