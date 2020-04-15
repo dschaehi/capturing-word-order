@@ -35,10 +35,10 @@ if __name__ == "__main__":
         # A trick to log the SHA of the git HEAD.
         "SHA": tune.grid_search([sha]),
         "corpus_size": tune.grid_search([corpus_size]),
-        "margin": tune.uniform(0.0, 1.0),
-        "lr": tune.loguniform(0.001, 1.0),
+        "margin": tune.grid_search([0.2]),
+        "lr": tune.grid_search([0.1]),
         "batch_size": tune.grid_search([300]),
-        "num_epochs": max(10000000 // corpus_size, 1),
+        "num_epochs": max(1000000 // corpus_size, 1),
         "test_freq": max(10000 // corpus_size, 1),
         "seed": 0,
     }
