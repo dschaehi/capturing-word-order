@@ -65,7 +65,10 @@ class WV:
         if filter_stopwords:
             st_words = set(stopwords.words("english"))
             sents = [
-                [word for word in sent if word.lower() not in st_words]
+                [
+                    word if word.lower() not in st_words else "ueoaueohatsh" 
+                    for word in sent
+                ]
                 for sent in sents
             ]
         if cond_lower_case:
