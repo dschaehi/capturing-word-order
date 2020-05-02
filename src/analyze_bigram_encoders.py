@@ -20,11 +20,13 @@ MODELS = ROOT / "models"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+# TODO: Check ``analyze_bigram_encoder``
 def analyze_bigram_encoder(
     bigram_encoder_name,
     wv,
     ix_sents,
     batch_size,
+    average_comparison=False,
     model_path=None,
     smoke_test=False,
     device=None,
@@ -55,15 +57,23 @@ def analyze_bigram_encoder(
     result_neg_dist = torch.tensor([], device=device).float()
     for i in trange(0, len(ix_sents), batch_size):
         vsents = wv.vecs[ix_sents[i : i + batch_size]].to(device)
+        # TODO: Check ``bigram_encoder``
         bigram_vsents = bigram_encoder(vsents)
         bigram_sentvecs = bigram_vsents.sum(1, keepdim=True)
+        # TODO: Check ``gen_pos_bigram_ixs``
         pos_bigram_ixs = gen_pos_bigram_ixs(ix_sents[i : i + batch_size], device=device)
+        # TODO: Check ``gen_neg_bigram_ixs``
         neg_bigram_ixs = gen_neg_bigram_ixs(ix_sents[i : i + batch_size], device=device)
         pos_bigram_vecs = bigram_encoder(wv.vecs[pos_bigram_ixs].to(device))
         neg_bigram_vecs = bigram_encoder(wv.vecs[neg_bigram_ixs].to(device))
-        comparison = cos(bigram_vsents, bigram_sentvecs).min(dim=1, keepdim=True).values
         pos_dist = cos(pos_bigram_vecs, bigram_sentvecs)
         neg_dist = cos(neg_bigram_vecs, bigram_sentvecs)
+        if average_comparison:
+            comparison = pos_dist
+        else:
+            comparison = (
+                cos(bigram_vsents, bigram_sentvecs).min(dim=1, keepdim=True).values
+            )
         result_comparison = torch.cat(
             (result_comparison, comparison > neg_dist,), dim=0
         )
@@ -77,6 +87,7 @@ def plot_result(
     wv,
     ix_sents,
     batch_size,
+    average_comparison=False,
     outdir=ROOT / "paper/img",
     model_path=None,
     seed=0,
@@ -95,6 +106,7 @@ def plot_result(
         wv,
         ix_sents,
         batch_size,
+        average_comparison=average_comparison,
         model_path=model_path,
         device=device,
     )
