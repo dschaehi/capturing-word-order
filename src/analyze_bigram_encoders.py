@@ -20,7 +20,6 @@ MODELS = ROOT / "models"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# TODO: Check ``analyze_bigram_encoder``
 def analyze_bigram_encoder(
     bigram_encoder_name,
     wv,
@@ -57,12 +56,9 @@ def analyze_bigram_encoder(
     result_neg_dist = torch.tensor([], device=device).float()
     for i in trange(0, len(ix_sents), batch_size):
         vsents = wv.vecs[ix_sents[i : i + batch_size]].to(device)
-        # TODO: Check ``bigram_encoder``
         bigram_vsents = bigram_encoder(vsents)
         bigram_sentvecs = bigram_vsents.sum(1, keepdim=True)
-        # TODO: Check ``gen_pos_bigram_ixs``
         pos_bigram_ixs = gen_pos_bigram_ixs(ix_sents[i : i + batch_size], device=device)
-        # TODO: Check ``gen_neg_bigram_ixs``
         neg_bigram_ixs = gen_neg_bigram_ixs(ix_sents[i : i + batch_size], device=device)
         pos_bigram_vecs = bigram_encoder(wv.vecs[pos_bigram_ixs].to(device))
         neg_bigram_vecs = bigram_encoder(wv.vecs[neg_bigram_ixs].to(device))
