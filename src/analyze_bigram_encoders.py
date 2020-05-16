@@ -123,19 +123,19 @@ def plot_result(
     ax.set_xlim(left=-1, right=1)
     params = {"alpha": 0.7, "bins": 200}
     ax.hist(
-        result_pos_dist.cpu().numpy(),
+        result_pos_dist[result_pos_dist != 0].cpu().numpy(),
         label=(r"$(w, w') \in B(S)$" if add_legend else None),
         **params,
         color="C2"
     )
     ax.hist(
-        result_neg_dist.cpu().numpy(),
+        result_neg_dist[result_neg_dist != 0].cpu().numpy(),
         label=(r"$(w, w') \notin B(S)$" if add_legend else None),
         **params,
         color="C3"
     )
     ax.set(
-        xlabel=r"$\cos(" + bigram_encoder_name_latex + r"(w, w'), \mathbf{S^2})$",
+        xlabel=r"$\cos(" + bigram_encoder_name_latex + r"(\mathbf{w}, \mathbf{w'}), \mathbf{S^2})$",
         ylabel=r"\# sentences",
     )
     if add_legend:
@@ -143,6 +143,172 @@ def plot_result(
     else:
         ax.legend(frameon=False)
     plt.savefig(Path(outdir) / "bigram_encoder_{}.pdf".format(bigram_encoder_name))
+    plt.show()
+
+
+def plot_uniformity(
+    word_pair,
+    wv,
+    ix_sents,
+    batch_size,
+    outdir=ROOT / "paper/img",
+    model_path=None,
+    seed=0,
+    add_legend=True,
+):
+    torch.manual_seed(seed)
+
+    bigram_encoder1 = BigramEncoder("diff")
+
+    model = Net(wv.vecs.size(1), BigramEncoder("diff"), 300)
+    if model_path:
+        model.load_state_dict(torch.load(model_path))
+    else:
+        model.load_state_dict(
+            torch.load(MODELS / "bigram_nn_wiki_train_{}.pth".format(str(1000000))),
+        )
+    model.to(device)
+
+    def bigram_encoder2(vec_sents):
+        with torch.no_grad():
+            result = model(vec_sents, aggregate=False)
+        return result
+
+    ix_sents = ix_sents.to(device)
+    cos = nn.CosineSimilarity(dim=2)
+    result1 = torch.tensor([], device=device).float()
+    result2 = torch.tensor([], device=device).float()
+    for i in trange(0, len(ix_sents), batch_size):
+        if word_pair == "random":
+            bigram_ixs1 = torch.randint(
+                low=2, high=wv.vecs.shape[0], size=(batch_size, 2)
+            )
+            bigram_ixs2 = torch.randint(
+                low=2, high=wv.vecs.shape[0], size=(batch_size, 2)
+            )
+        elif word_pair == "bigram":
+            bigram_ixs1 = gen_pos_bigram_ixs(
+                ix_sents[i : i + batch_size], device=device
+            )
+            bigram_ixs2 = gen_pos_bigram_ixs(
+                ix_sents[i : i + batch_size], device=device
+            )
+        else:
+            raise NotImplementedError
+        ixs_different = bigram_ixs1[:, 0] != bigram_ixs2[:, 0]
+        bigram_ixs1 = bigram_ixs1[ixs_different]
+        bigram_ixs2 = bigram_ixs2[ixs_different]
+        bigram_vecs1 = bigram_encoder1(wv.vecs[bigram_ixs1].to(device))
+        bigram_vecs2 = bigram_encoder1(wv.vecs[bigram_ixs2].to(device))
+        bigram_vecs3 = bigram_encoder2(wv.vecs[bigram_ixs1].to(device))
+        bigram_vecs4 = bigram_encoder2(wv.vecs[bigram_ixs2].to(device))
+        dist1 = cos(bigram_vecs1, bigram_vecs2)
+        dist2 = cos(bigram_vecs3, bigram_vecs4)
+        result1 = torch.cat((result1, dist1), dim=0)
+        result2 = torch.cat((result2, dist2), dim=0)
+
+    mpl.rcParams["text.latex.preamble"] = r"\usepackage{times}"
+    mpl.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
+    plt.rc("text", usetex=True)
+    plt.rc("font", family="serif", size=24)
+    fig, ax = plt.subplots()
+    ax.set_position([0.22, 0.22, 0.7, 0.7])
+
+    ax.set_ylim(top=40000)
+    ax.set_xlim(left=-1, right=1)
+    params = {"alpha": 0.7, "bins": 200}
+    ax.hist(
+        result1[result1 != 0].cpu().numpy(),
+        label=(r"$f_\text{diff}$" if add_legend else None),
+        **params,
+        color="C1"
+    )
+    params = {"alpha": 0.7, "bins": 200}
+    ax.hist(
+        result2[result2 != 0].cpu().numpy(),
+        label=(r"$f_{T}$" if add_legend else None),
+        **params,
+        color="C0"
+    )
+    ax.set(
+        xlabel=r"$\cos(f(\mathbf{w_1}, \mathbf{w_2}), f(\mathbf{w_3}, \mathbf{w_4}))$",
+        ylabel=(r"\# word pairs" if word_pair == "random" else r"\# bigrams"),
+    )
+    if add_legend:
+        ax.legend()
+    else:
+        ax.legend(frameon=False)
+    plt.savefig(Path(outdir) / "bigram_uniformity_{}.pdf".format(word_pair))
+    plt.show()
+
+
+def plot_bigram_norm(
+    wv,
+    ix_sents,
+    batch_size,
+    outdir=ROOT / "paper/img",
+    model_path=None,
+    seed=0,
+    add_legend=True,
+):
+    torch.manual_seed(seed)
+
+    model = Net(wv.vecs.size(1), BigramEncoder("diff"), 300)
+    model.load_state_dict(torch.load(model_path))
+    model.to(device)
+
+    def bigram_encoder(vec_sents):
+        with torch.no_grad():
+            result = model(vec_sents, aggregate=False)
+        return result
+
+    ix_sents = ix_sents.to(device)
+    result1 = torch.tensor([], device=device).float()
+    # result2 = torch.tensor([], device=device).float()
+    for i in trange(0, len(ix_sents), batch_size):
+        bigram_ixs1 = gen_pos_bigram_ixs(ix_sents[i : i + batch_size], device=device)
+        # bigram_ixs2 = gen_pos_bigram_ixs(ix_sents[i : i + batch_size], device=device)
+        # bigram_ixs3 = gen_pos_bigram_ixs(ix_sents[i : i + batch_size], device=device)
+        bigram_vecs1 = bigram_encoder(wv.vecs[bigram_ixs1].to(device))
+        # bigram_vecs2 = bigram_encoder(wv.vecs[bigram_ixs2].to(device))
+        # bigram_vecs3 = bigram_encoder(wv.vecs[bigram_ixs3].to(device))
+        norm = bigram_vecs1.norm(dim=-1)
+        # prod = (bigram_vecs2 * bigram_vecs3).sum(dim=-1)
+        result1 = torch.cat((result1, norm), dim=0)
+        # result2 = torch.cat((result2, prod), dim=0)
+
+    mpl.rcParams["text.latex.preamble"] = r"\usepackage{times}"
+    mpl.rcParams["text.latex.preamble"] = r"\usepackage{amsmath}"
+    plt.rc("text", usetex=True)
+    plt.rc("font", family="serif", size=24)
+    fig, ax = plt.subplots()
+    ax.set_position([0.22, 0.22, 0.7, 0.7])
+
+    # ax.set_ylim(top=40000)
+    # ax.set_xlim(left=-1, right=1)
+    params = {"alpha": 0.7, "bins": 200}
+    ax.hist(
+        result1[result1 != 0].cpu().numpy(),
+        # label=(r"$\lVert f(\mathbf{w}, \mathbf{w'})\rVert$" if add_legend else None),
+        **params,
+        color="C8"
+    )
+    # params = {"alpha": 0.7, "bins": 200}
+    # ax.hist(
+    #     result2[result2 != 0].cpu().numpy(),
+    #     label=(r"$\mathbf{b} \cdot \mathbf{b'}$" if add_legend else None),
+    #     **params,
+    #     color="C9"
+    # )
+    ax.set(
+        xlabel=r"$\lVert f(\mathbf{w}, \mathbf{w'})\rVert_2$", ylabel=r"\# bigrams",
+    )
+    plt.xticks([16, 17, 17.3, 18])
+    if add_legend:
+        ax.legend()
+    else:
+        ax.legend(frameon=False)
+    plt.savefig(Path(outdir) / "bigram_norm.pdf")
     plt.show()
 
 
