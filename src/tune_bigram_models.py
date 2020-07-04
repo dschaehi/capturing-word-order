@@ -8,7 +8,6 @@ from ray import tune
 
 from generate_bigram_models import TrainBigramNN
 
-
 warnings.filterwarnings("ignore")
 
 # Force to commit changes
@@ -49,7 +48,7 @@ if __name__ == "__main__":
         config=config,
         num_samples=1 if args.smoke_test else 1000,
         # trial_name_creator=trial_str_creator,
-        resources_per_trial={"cpu": 8, "gpu": 1},
+        resources_per_trial={"cpu": 6, "gpu": 1},
         stop={"training_iteration": 1 if args.smoke_test else config["num_epochs"]},
         checkpoint_at_end=True,
         verbose=1,
