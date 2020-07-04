@@ -35,8 +35,9 @@ Capturing Word Order in Averaging Based Sentence Embeddings
 #+end_src
 *** Generate Tokenized Wikipedia Sentences
 #+begin_src sh
-  # Download  nltk 'punkt' package that is necesseray for tokenization
+  # Download  nltk 'punkt' and 'stopwords' packages that are necessery for tokenization and for training the models.
   python -c "import nltk; nltk.download('punkt')"
+  python -c "import nltk; nltk.download('stopwords')"
 
   # Create a folder for processed data
   mkdir -p $cwd/data/processed
