@@ -73,6 +73,6 @@ python -m src.data.make_splits
 #+end_src
 *** Generate Figure 1 and Table 1
 Run =notebooks/generate_figure_1_and_table_1.ipynb= to generate Figure 1 and Table 1
-*** NEXT Generate Table 2
-*** TODO Generate Figure 2
-*** TODO Generate Figure 3
+*** Generate Table 2
+*** Generate Figure 2
+*** Generate Figure 3
