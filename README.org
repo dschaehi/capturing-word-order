@@ -1,7 +1,12 @@
 Capturing Word Order in Averaging Based Sentence Embeddings
 ** Installation
 *** Requirements
+- gitpython
+- humanize
+- matplotlib
 - nltk
+- ray[tune]
+- pytorch
 - tqdm
 *** Prepare Wikipedia Corpus
 #+begin_src sh
@@ -61,4 +66,10 @@ python -m src.data.make_splits
 #+begin_src sh
   wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip -P data/raw/
 #+end_src
-*** 
+*** Train neural network models for bigram representations
+#+begin_src sh
+  cd src
+  python tune_bigram_models.py
+#+end_src
+*** Generate Figure 1 and Table 1
+Run =notebooks/generate_figure_1_and_table_1.ipynb= to generate Figure 1 and Table 1

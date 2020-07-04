@@ -29,7 +29,7 @@ if __name__ == "__main__":
     if not args.smoke_test and repo.is_dirty():
         raise RepositoryDirtyError(repo, "Have you forgotten to commit the changes?")
 
-    corpus_size = 100
+    corpus_size = 1000000
     config = {
         # A trick to log the SHA of the git HEAD.
         "SHA": tune.grid_search([sha]),
