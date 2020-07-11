@@ -10,7 +10,7 @@ Capturing Word Order in Averaging Based Sentence Embeddings
 - tqdm
 *** Prepare Wikipedia Corpus
 #+begin_src sh
-  # Store the path of the current folder as ~cwd~
+  # Store the path of the current folder as cwd
   cwd=$(pwd)
   # Update and initialize submodules
   git submodule update
@@ -51,7 +51,6 @@ Capturing Word Order in Averaging Based Sentence Embeddings
   cd $cwd/src/data/
   python tokenize_wiki.py
 
-  # TODO: Check whether next step is necessary.
   # Generate tokenized 1 million wikipedia sentences of length <= 25.
   python tokenize_wiki.py --max_len 25
   # Generate tokenized 2 million wikipedia sentences of length <= 25.
@@ -62,9 +61,11 @@ Capturing Word Order in Averaging Based Sentence Embeddings
 cd $cwd/
 python -m src.data.make_splits
 #+end_src
-*** Download fastText word vectors
+*** Download fastText word vectors and unzip it.
 #+begin_src sh
-  wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip -P data/raw/
+  wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip -P $cwd/data/raw/
+  cd $cwd/data/raw
+  unzip crawl-300d-2M.vec.zip
 #+end_src
 *** Train neural network models for bigram representations
 #+begin_src sh
