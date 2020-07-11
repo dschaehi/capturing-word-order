@@ -25,7 +25,6 @@ if __name__ == "__main__":
     )
 
     args, _ = parser.parse_known_args()
-
     if not args.smoke_test and repo.is_dirty():
         raise RepositoryDirtyError(repo, "Have you forgotten to commit the changes?")
 
@@ -47,10 +46,9 @@ if __name__ == "__main__":
         TrainBigramNN,
         name=experiment_name,
         config=config,
-        # num_samples=1 if args.smoke_test else 1000,
-        num_samples=100,
+        num_samples=1 if args.smoke_test else 1000,
         # trial_name_creator=trial_str_creator,
-        resources_per_trial={"cpu": 4, "gpu": 8},
+        resources_per_trial={"cpu": 4, "gpu": 1},
         stop={"training_iteration": 1 if args.smoke_test else config["num_epochs"]},
         checkpoint_at_end=True,
         verbose=1,
