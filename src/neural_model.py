@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from multiset import Multiset
 
-from .misc import BigramFunction
-from .models.bigram_nn2 import Net
+from .misc import BigramEncoder
+from .models import Net
 from .sentence_reconstruction import ngram_sent_vecs
 
 
@@ -54,7 +54,7 @@ def gen_bvs_i2b(
 
 class BigramNN:
     def __init__(self, bigram_fn_name):
-        self.model = Net(300, BigramFunction(bigram_fn_name), 300)
+        self.model = Net(300, BigramEncoder(bigram_fn_name), 300)
         self.model.load_state_dict(
             torch.load(MODELS / "bigram_nn_" + bigram_fn_name + ".pth")
         )

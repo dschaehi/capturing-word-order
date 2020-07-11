@@ -66,7 +66,7 @@ class WV:
             st_words = set(stopwords.words("english"))
             sents = [
                 [
-                    word if word.lower() not in st_words else "ueoaueohatsh" 
+                    word if word.lower() not in st_words else "ueoaueohatsh"
                     for word in sent
                 ]
                 for sent in sents
