@@ -8,6 +8,7 @@ Capturing Word Order in Averaging Based Sentence Embeddings
 - ray[tune]
 - pytorch
 - tqdm
+- cupy
 *** Installation
 #+begin_src sh
 cd capturing-word-order
