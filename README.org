@@ -8,6 +8,11 @@ Capturing Word Order in Averaging Based Sentence Embeddings
 - ray[tune]
 - pytorch
 - tqdm
+*** Installation
+#+begin_src sh
+cd capturing-word-order
+pip install -e .
+#+end_src
 *** Prepare Wikipedia Corpus
 #+begin_src sh
   # Store the path of the current folder as cwd

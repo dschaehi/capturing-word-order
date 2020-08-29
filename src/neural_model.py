@@ -3,6 +3,7 @@ from itertools import product
 from pathlib import Path
 from typing import Tuple
 
+import git
 import numpy as np
 import torch
 from multiset import Multiset
@@ -12,11 +13,14 @@ from .models import Net
 from .sentence_reconstruction import ngram_sent_vecs
 
 
+repo = git.Repo(Path(".").absolute(), search_parent_directories=True)
+ROOT = Path(repo.working_tree_dir)
+
 PartialSent = namedtuple("PartialSent", ["multiset", "sent"])
 PartialList = namedtuple("PartialList", ["multiset", "trigrams"])
 
-DATA = Path("../data/")
-MODELS = Path("../models")
+DATA = ROOT / "data"
+MODELS = ROOT / "models"
 
 device = torch.device("cuda" if torch.cuda.is_available else "cpu")
 
@@ -55,13 +59,14 @@ def gen_bvs_i2b(
 class BigramNN:
     def __init__(self, bigram_fn_name):
         self.model = Net(300, BigramEncoder(bigram_fn_name), 300)
+        # FIXME: Change the name of the pytorch model. 
         self.model.load_state_dict(
-            torch.load(MODELS / "bigram_nn_" + bigram_fn_name + ".pth")
+            torch.load(MODELS / ("bigram_nn_wiki_train_100.pth"))
         )
         self.model.to(device)
 
     def __call__(self, ngram_vecs):
-        vec_sents = torch.from_numpy(ngram_vecs).to(device)
+        vec_sents = ngram_vecs.to(device)
         with torch.no_grad():
             output = self.model.forward(vec_sents, aggregate=False)
         return output.cpu().numpy()

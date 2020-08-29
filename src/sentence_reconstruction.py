@@ -2,13 +2,16 @@ import warnings
 from itertools import chain, combinations, product
 
 import numpy as np
+import torch
 from multiset import Multiset
 from sklearn.linear_model import orthogonal_mp
 from toolz import compose
 
-# from .solvers import basis_pursuit
-from .solvers_cupy import basis_pursuit
 from .solvers import omp as orthogonal_mp_arora
+from .solvers_cupy import basis_pursuit
+
+
+# from .solvers import basis_pursuit
 
 
 def accuracy(ngram_sents1, ngram_sents2):
@@ -73,7 +76,7 @@ def ngram_sent_vecs(ngram_sents, ngram_vec_repr, word_vecs, word2index, n):
         if n == 1:
             indices = [word2index[unigram] for unigram in ngram_sent]
         else:
-            indices = np.array(
+            indices = torch.LongTensor(
                 [[word2index[word] for word in ngram] for ngram in ngram_sent]
             )
         # ngram_vecs.shape = (len(ngram_sent), n, d)
@@ -106,7 +109,7 @@ def bigram_sent2trigrams(bigram_sent, markers=False, start="▷", end="◁"):
     return out
 
 
-def gen_trigrams1(reconstructed_bigram_sents, markers=False, start="▷", end="◁"):
+def gen_trigrams(reconstructed_bigram_sents, markers=False, start="▷", end="◁"):
     out = (
         set(
             map(
@@ -137,25 +140,25 @@ def gen_trigrams1(reconstructed_bigram_sents, markers=False, start="▷", end="�
     return out
 
 
-def gen_trigrams2(reconstructed_unigram_sents, markers=True, start="▷", end="◁"):
-    output = (
-        set(
-            map(
-                compose(tuple, sorted),
-                chain(
-                    combinations(reconstructed_unigram_sent, 3),
-                    (
-                        (*bigram, unigram)
-                        for (bigram, unigram) in product(
-                            combinations(reconstructed_unigram_sent, 2), [start, end]
-                        )
-                    ),
-                ),
-            )
-        )
-        for reconstructed_unigram_sent in reconstructed_unigram_sents
-    )
-    return output
+# def gen_trigrams2(reconstructed_unigram_sents, markers=True, start="▷", end="◁"):
+#     output = (
+#         set(
+#             map(
+#                 compose(tuple, sorted),
+#                 chain(
+#                     combinations(reconstructed_unigram_sent, 3),
+#                     (
+#                         (*bigram, unigram)
+#                         for (bigram, unigram) in product(
+#                             combinations(reconstructed_unigram_sent, 2), [start, end]
+#                         )
+#                     ),
+#                 ),
+#             )
+#         )
+#         for reconstructed_unigram_sent in reconstructed_unigram_sents
+#     )
+#     return output
 
 
 def tvs_i2t(trigrams, trigram_vec_repr, word_vecs, word2index):
@@ -219,7 +222,6 @@ def reconstruct(ngram_sent_vec, ngram_vecs, index2ngram, solver="omp", nnz=70):
                 for (index, count) in zip(indices, counts)
             }
         )
-    # breakpoint()
     return output
 
 

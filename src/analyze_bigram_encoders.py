@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt
 from torch.distributions.categorical import Categorical
 from tqdm.auto import trange
 
-from misc import BigramEncoder
-from models import Net
+from src.misc import BigramEncoder
+from src.models import Net
 
 
 repo = git.Repo(Path(".").absolute(), search_parent_directories=True)
@@ -323,6 +323,7 @@ def gen_pos_bigram_ixs(ix_sents, device=None):
     )
     return ix_sents[
         torch.arange(batch_size).view(-1, 1), torch.cat((ixs, (ixs + 1)), dim=1),
+
     ]
 
 

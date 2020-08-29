@@ -125,7 +125,7 @@ def basis_pursuit(A, b, tol=1e-4, niter=100, biter=32):
         fu2 = fu2p
         sdg = -(cp.inner(fu1, lamu1) + cp.inner(fu2, lamu2))
         if sdg < tol:
-            return x
+            return cp.asnumpy(x)
 
         u = up
         v = vp

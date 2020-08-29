@@ -102,7 +102,7 @@ class WV:
     def load(file_path, has_padding=True, padding_ix=0):
         with open(file_path, "rb") as f:
             word_index, word_vecs = pickle.load(f)
-        return WV(torch.tensor(word_vecs, dtype=torch.float), word_index,)
+        return WV(torch.tensor(word_vecs, dtype=torch.float), word_index)
 
 
 class Corpus:
@@ -286,7 +286,7 @@ def process_word_vecs(path_to_vec, out_dir=PROCESSED):
                     word_vecs[i] = np.fromstring(vec, sep=" ")
                     i += 1
                     pbar.update(1)
-        word_vecs = torch.from_numpy(word_vecs).float()
         with open(path_to_pickled_vec, "wb") as f:
             pickle.dump([word2index, word_vecs], f, protocol=4)
+    word_vecs = torch.from_numpy(word_vecs).float()
     return word2index, word_vecs
