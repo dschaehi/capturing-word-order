@@ -1,4 +1,4 @@
-(Capturing Word Order in Averaging Based Sentence Embeddings)[http://ebooks.iospress.nl/volumearticle/55123]
+[[http://ebooks.iospress.nl/volumearticle/55123][Capturing Word Order in Averaging Based Sentence Embeddings)]]
 
 #+begin_quote
 @inproceedings{Lee_Camacho-Collados_Espinosa Anke_Schockaert_2020, place={Santiago, Spain}, title={Capturing Word Order in Averaging Based Sentence Embeddings}, booktitle={24th European Conference on Artificial Intelligence}, author={Lee, Jae Hee and Camacho-Collados, Jose and Espinosa Anke, Luis and Schockaert, Steven}, year={2020} }
