@@ -1,4 +1,4 @@
-[[http://ebooks.iospress.nl/volumearticle/55123][Capturing Word Order in Averaging Based Sentence Embeddings)]]
+[[http://ebooks.iospress.nl/volumearticle/55123][Capturing Word Order in Averaging Based Sentence Embeddings]]
 
 #+begin_src bibtex
 @inproceedings{Lee_Camacho-Collados_Espinosa Anke_Schockaert_2020, 
